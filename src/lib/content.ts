@@ -9,7 +9,7 @@ export type BookEntryLike = {
     slug: string;
     visibility: Visibility;
     updatedAt: string;
-    tags?: string[];
+    tags?: readonly string[];
   };
 };
 
@@ -50,7 +50,12 @@ export function filterPublishedChapters<T extends ChapterEntryLike>(
     .filter((chapter) => chapter.data.status === "published")
     .filter((chapter) => (books ? publicBookSlugs.has(chapter.data.book) : true))
     .filter((chapter) => (bookSlug ? chapter.data.book === bookSlug : true))
-    .sort((a, b) => a.data.chapterNo.localeCompare(b.data.chapterNo));
+    .sort(
+      (a, b) =>
+        a.data.chapterNo.localeCompare(b.data.chapterNo) ||
+        a.data.book.localeCompare(b.data.book) ||
+        a.data.slug.localeCompare(b.data.slug)
+    );
 }
 
 export function buildChapterNav<T extends ChapterEntryLike>(
@@ -91,9 +96,11 @@ export async function getPublishedChapters(bookSlug?: string) {
 
 export async function getRecentChapters(limit = 10) {
   const chapters = await getPublishedChapters();
+  const normalizedLimit = Math.max(0, limit);
+
   return [...chapters]
     .sort((a, b) => b.data.updatedAt.localeCompare(a.data.updatedAt))
-    .slice(0, limit);
+    .slice(0, normalizedLimit);
 }
 
 export async function getChapterNav(bookSlug: string, chapterSlug: string) {

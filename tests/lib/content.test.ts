@@ -1,13 +1,23 @@
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+const { getCollectionMock } = vi.hoisted(() => ({
+  getCollectionMock: vi.fn()
+}));
 
 vi.mock("astro:content", () => ({
-  getCollection: vi.fn()
+  getCollection: getCollectionMock
 }));
 
 let buildChapterNav: typeof import("../../src/lib/content").buildChapterNav;
 let filterPublicBooks: typeof import("../../src/lib/content").filterPublicBooks;
 let filterPublishedChapters: typeof import("../../src/lib/content").filterPublishedChapters;
 let findPublicBookBySlug: typeof import("../../src/lib/content").findPublicBookBySlug;
+let getAllTags: typeof import("../../src/lib/content").getAllTags;
+let getBookBySlug: typeof import("../../src/lib/content").getBookBySlug;
+let getChapterNav: typeof import("../../src/lib/content").getChapterNav;
+let getPublicBooks: typeof import("../../src/lib/content").getPublicBooks;
+let getPublishedChapters: typeof import("../../src/lib/content").getPublishedChapters;
+let getRecentChapters: typeof import("../../src/lib/content").getRecentChapters;
 
 const books = [
   {
@@ -78,8 +88,18 @@ beforeAll(async () => {
     buildChapterNav,
     filterPublicBooks,
     filterPublishedChapters,
-    findPublicBookBySlug
+    findPublicBookBySlug,
+    getAllTags,
+    getBookBySlug,
+    getChapterNav,
+    getPublicBooks,
+    getPublishedChapters,
+    getRecentChapters
   } = await import("../../src/lib/content"));
+});
+
+beforeEach(() => {
+  getCollectionMock.mockReset();
 });
 
 describe("content query helpers", () => {
@@ -106,5 +126,139 @@ describe("content query helpers", () => {
     expect(nav.current?.data.slug).toBe("two");
     expect(nav.prev?.data.slug).toBe("one");
     expect(nav.next).toBeNull();
+  });
+
+  it("uses a deterministic secondary sort when chapter numbers match", () => {
+    const publicBooks = [
+      ...books,
+      {
+        id: "books/another-public.json",
+        data: {
+          slug: "another-public",
+          visibility: "public" as const,
+          updatedAt: "2026-06-02",
+          tags: ["C"]
+        }
+      }
+    ] as const;
+    const sameNumberChapters = [
+      chapters[0],
+      {
+        id: "chapters/another-public-001.md",
+        data: {
+          book: "another-public",
+          chapterNo: "001",
+          slug: "alpha",
+          status: "published" as const,
+          updatedAt: "2026-06-02"
+        }
+      }
+    ] as const;
+
+    expect(
+      filterPublishedChapters(sameNumberChapters, publicBooks).map(
+        (chapter) => `${chapter.data.book}:${chapter.data.slug}`
+      )
+    ).toEqual(["another-public:alpha", "public-book:one"]);
+  });
+
+  it("gets only public books from the books collection", async () => {
+    getCollectionMock.mockResolvedValueOnce(books);
+
+    expect(await getPublicBooks()).toEqual([books[0]]);
+    expect(getCollectionMock).toHaveBeenCalledWith("books");
+  });
+
+  it("gets a public book by slug and returns null for hidden books", async () => {
+    getCollectionMock.mockResolvedValueOnce(books);
+    expect(await getBookBySlug("public-book")).toEqual(books[0]);
+
+    getCollectionMock.mockResolvedValueOnce(books);
+    expect(await getBookBySlug("hidden-book")).toBeNull();
+  });
+
+  it("gets published chapters scoped to public books and an optional book slug", async () => {
+    getCollectionMock.mockImplementation(async (collection: string) => {
+      if (collection === "books") return books;
+      if (collection === "chapters") return chapters;
+      return [];
+    });
+
+    expect(
+      (await getPublishedChapters()).map((chapter) => `${chapter.data.book}:${chapter.data.slug}`)
+    ).toEqual(["public-book:one", "public-book:two"]);
+
+    expect(
+      (await getPublishedChapters("public-book")).map((chapter) => chapter.data.slug)
+    ).toEqual(["one", "two"]);
+  });
+
+  it("gets recent chapters in updatedAt order and clamps negative limits", async () => {
+    const manyChapters = [
+      ...chapters,
+      {
+        id: "chapters/public-004.md",
+        data: {
+          book: "public-book",
+          chapterNo: "004",
+          slug: "four",
+          status: "published" as const,
+          updatedAt: "2026-06-06"
+        }
+      },
+      {
+        id: "chapters/public-005.md",
+        data: {
+          book: "public-book",
+          chapterNo: "005",
+          slug: "five",
+          status: "published" as const,
+          updatedAt: "2026-06-07"
+        }
+      }
+    ] as const;
+
+    getCollectionMock.mockImplementation(async (collection: string) => {
+      if (collection === "books") return books;
+      if (collection === "chapters") return manyChapters;
+      return [];
+    });
+
+    expect((await getRecentChapters(1)).map((chapter) => chapter.data.slug)).toEqual(["five"]);
+    expect(await getRecentChapters(-3)).toEqual([]);
+  });
+
+  it("gets chapter navigation for a published public chapter", async () => {
+    getCollectionMock.mockImplementation(async (collection: string) => {
+      if (collection === "books") return books;
+      if (collection === "chapters") return chapters;
+      return [];
+    });
+
+    const nav = await getChapterNav("public-book", "two");
+
+    expect(nav.current?.data.slug).toBe("two");
+    expect(nav.prev?.data.slug).toBe("one");
+    expect(nav.next).toBeNull();
+  });
+
+  it("gets unique sorted tags from public books only", async () => {
+    const taggedBooks = [
+      books[0],
+      {
+        id: "books/second-public.json",
+        data: {
+          slug: "second-public",
+          visibility: "public" as const,
+          updatedAt: "2026-06-01",
+          tags: ["B", "A"]
+        }
+      },
+      books[1]
+    ] as const;
+
+    getCollectionMock.mockResolvedValueOnce(taggedBooks);
+
+    expect(await getAllTags()).toEqual(["A", "B"]);
   });
 });
