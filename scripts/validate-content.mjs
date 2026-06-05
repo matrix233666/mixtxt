@@ -49,6 +49,15 @@ async function readAstroSite(projectRoot) {
   return astroConfigModule.default?.site;
 }
 
+/**
+ * @typedef {Object} ValidateProjectContentOptions
+ * @property {string} [projectRoot]
+ * @property {string | undefined} [astroSite]
+ */
+
+/**
+ * @param {ValidateProjectContentOptions} [options]
+ */
 export async function validateProjectContent({
   projectRoot = process.cwd(),
   astroSite
