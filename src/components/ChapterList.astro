@@ -1,0 +1,31 @@
+---
+interface Chapter {
+  data: {
+    book: string;
+    chapterNo: string;
+    title: string;
+    slug: string;
+    summary?: string;
+  };
+}
+
+interface Props {
+  chapters: Chapter[];
+}
+
+const { chapters } = Astro.props;
+---
+
+<ol class="chapter-list">
+  {chapters.map((chapter) => (
+    <li>
+      <a href={`/books/${chapter.data.book}/${chapter.data.slug}/`}>
+        <span class="chapter-list__number">{chapter.data.chapterNo}</span>
+        <div>
+          <strong>{chapter.data.title}</strong>
+          {chapter.data.summary && <p>{chapter.data.summary}</p>}
+        </div>
+      </a>
+    </li>
+  ))}
+</ol>

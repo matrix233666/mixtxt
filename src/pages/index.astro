@@ -1,0 +1,49 @@
+---
+import AppFooter from "../components/AppFooter.astro";
+import AppHeader from "../components/AppHeader.astro";
+import BookCard from "../components/BookCard.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getPublicBooks, getRecentChapters } from "../lib/content";
+
+const books = await getPublicBooks();
+const recentChapters = await getRecentChapters(5);
+---
+
+<BaseLayout>
+  <AppHeader />
+  <main class="page-shell page-stack">
+    <section class="hero-block">
+      <p class="eyebrow">AI 改编小说</p>
+      <h1>MixTXT</h1>
+      <p>用 AI 改编经典小说的个人创作站。</p>
+    </section>
+
+    <section class="section-block">
+      <div class="section-header">
+        <h2>书籍</h2>
+      </div>
+      <div class="book-grid">
+        {books.map((book) => (
+          <BookCard book={book} />
+        ))}
+      </div>
+    </section>
+
+    <section class="section-block">
+      <div class="section-header">
+        <h2>最近更新</h2>
+      </div>
+      <ul class="recent-list">
+        {recentChapters.map((chapter) => (
+          <li>
+            <a href={`/books/${chapter.data.book}/${chapter.data.slug}/`}>
+              <strong>{chapter.data.title}</strong>
+              <span>{chapter.data.book}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  </main>
+  <AppFooter />
+</BaseLayout>

@@ -1,0 +1,21 @@
+---
+import AppFooter from "../components/AppFooter.astro";
+import AppHeader from "../components/AppHeader.astro";
+import BaseLayout from "./BaseLayout.astro";
+import "../styles/reader.css";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<BaseLayout title={title} description={description}>
+  <AppHeader />
+  <main class="reader-shell">
+    <slot />
+  </main>
+  <AppFooter />
+</BaseLayout>

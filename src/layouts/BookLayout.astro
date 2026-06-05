@@ -1,0 +1,20 @@
+---
+import AppFooter from "../components/AppFooter.astro";
+import AppHeader from "../components/AppHeader.astro";
+import BaseLayout from "./BaseLayout.astro";
+
+interface Props {
+  title: string;
+  summary: string;
+}
+
+const { title, summary } = Astro.props;
+---
+
+<BaseLayout title={title} description={summary}>
+  <AppHeader />
+  <main class="page-shell page-stack">
+    <slot />
+  </main>
+  <AppFooter />
+</BaseLayout>

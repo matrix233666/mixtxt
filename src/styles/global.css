@@ -1,0 +1,203 @@
+@import "./tokens.css";
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+p {
+  margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+.page-shell {
+  width: min(calc(100% - 32px), var(--max-width));
+  margin: 0 auto;
+}
+
+.page-stack {
+  padding: 32px 0 56px;
+  display: grid;
+  gap: 24px;
+}
+
+.site-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.site-header__inner {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.site-brand {
+  font-weight: 700;
+}
+
+.site-nav {
+  display: flex;
+  gap: 16px;
+  color: var(--muted);
+}
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.site-footer .page-shell {
+  padding: 24px 0;
+  color: var(--muted);
+}
+
+.card-surface,
+.hero-block,
+.section-block,
+.book-card,
+.chapter-list li,
+.reader-page {
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.card-surface,
+.hero-block,
+.section-block,
+.book-card,
+.reader-page {
+  padding: 24px;
+}
+
+.eyebrow {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.hero-block {
+  display: grid;
+  gap: 12px;
+}
+
+.section-block {
+  display: grid;
+  gap: 20px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.book-card__link {
+  display: grid;
+  gap: 12px;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+}
+
+.tag-row li {
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  background: var(--surface-alt);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.recent-list {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+}
+
+.recent-list a {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface-alt);
+}
+
+.recent-list span {
+  color: var(--muted);
+}
+
+.book-page {
+  display: grid;
+  gap: 20px;
+}
+
+.book-summary {
+  color: var(--muted);
+}
+
+.chapter-list {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  margin-top: 16px;
+}
+
+.chapter-list li {
+  padding: 0;
+}
+
+.chapter-list a {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  padding: 16px;
+}
+
+.chapter-list__number {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.chapter-list p {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+.not-found {
+  display: grid;
+  gap: 12px;
+}

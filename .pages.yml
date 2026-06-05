@@ -4,7 +4,7 @@ media:
     input: public/covers
     output: /covers
     rename: safe
-    extensions: [jpg, jpeg, png, webp]
+    extensions: [jpg, jpeg, png, webp, svg]
 
 content:
   - name: site

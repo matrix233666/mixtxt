@@ -1,0 +1,50 @@
+---
+import { render } from "astro:content";
+import ChapterNav from "../../../components/ChapterNav.astro";
+import ReaderLayout from "../../../layouts/ReaderLayout.astro";
+import { getChapterNav, getPublicBooks, getPublishedChapters } from "../../../lib/content";
+import { defaultReaderPreferences } from "../../../lib/reading";
+
+export async function getStaticPaths() {
+  const books = await getPublicBooks();
+  const paths = await Promise.all(
+    books.map(async (book) => {
+      const chapters = await getPublishedChapters(book.data.slug);
+      return chapters.map((chapter) => ({
+        params: {
+          book: book.data.slug,
+          chapter: chapter.data.slug
+        }
+      }));
+    })
+  );
+
+  return paths.flat();
+}
+
+const { book, chapter } = Astro.params;
+const nav = await getChapterNav(book!, chapter!);
+const currentChapter = nav.current!;
+const { Content } = await render(currentChapter);
+---
+
+<ReaderLayout title={currentChapter.data.title} description={currentChapter.data.summary}>
+  <article class="reader-page card-surface" data-theme={defaultReaderPreferences.theme}>
+    <header class="reader-header">
+      <p class="eyebrow">{currentChapter.data.book}</p>
+      <h1>{currentChapter.data.title}</h1>
+      <p>{currentChapter.data.summary}</p>
+    </header>
+
+    <div class="reader-meta">
+      <span>字体 {defaultReaderPreferences.fontSize}px</span>
+      <span>行高 {defaultReaderPreferences.lineHeight}</span>
+    </div>
+
+    <div class="reader-body">
+      <Content />
+    </div>
+
+    <ChapterNav prev={nav.prev} next={nav.next} />
+  </article>
+</ReaderLayout>

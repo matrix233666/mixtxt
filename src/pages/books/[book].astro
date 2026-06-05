@@ -1,0 +1,39 @@
+---
+import ChapterList from "../../components/ChapterList.astro";
+import BookLayout from "../../layouts/BookLayout.astro";
+import { getBookBySlug, getPublicBooks, getPublishedChapters } from "../../lib/content";
+
+export async function getStaticPaths() {
+  const books = await getPublicBooks();
+
+  return books.map((book) => ({
+    params: {
+      book: book.data.slug
+    }
+  }));
+}
+
+const { book: bookSlug } = Astro.params;
+const book = await getBookBySlug(bookSlug!);
+const chapters = await getPublishedChapters(bookSlug);
+---
+
+<BookLayout title={book!.data.title} summary={book!.data.summary}>
+  <article class="book-page card-surface">
+    <p class="eyebrow">{book!.data.status}</p>
+    <h1>{book!.data.title}</h1>
+    <p class="book-summary">{book!.data.summary}</p>
+    {(book!.data.tags ?? []).length > 0 && (
+      <ul class="tag-row" aria-label="标签">
+        {(book!.data.tags ?? []).map((tag) => (
+          <li>{tag}</li>
+        ))}
+      </ul>
+    )}
+
+    <section class="book-page__chapters">
+      <h2>章节目录</h2>
+      <ChapterList chapters={chapters} />
+    </section>
+  </article>
+</BookLayout>

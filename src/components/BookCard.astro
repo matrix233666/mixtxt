@@ -1,0 +1,28 @@
+---
+interface Props {
+  book: {
+    data: {
+      slug: string;
+      title: string;
+      summary: string;
+      tags?: readonly string[];
+    };
+  };
+}
+
+const { book } = Astro.props;
+---
+
+<article class="book-card">
+  <a class="book-card__link" href={`/books/${book.data.slug}/`}>
+    <h2>{book.data.title}</h2>
+    <p>{book.data.summary}</p>
+    {(book.data.tags ?? []).length > 0 && (
+      <ul class="tag-row" aria-label="标签">
+        {(book.data.tags ?? []).map((tag) => (
+          <li>{tag}</li>
+        ))}
+      </ul>
+    )}
+  </a>
+</article>
