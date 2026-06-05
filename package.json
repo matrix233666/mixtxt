@@ -7,7 +7,7 @@
     "dev": "astro dev",
     "check": "astro check",
     "test": "node scripts/run-vitest.mjs",
-    "validate:content": "node -e \"process.exit(0)\"",
+    "validate:content": "node scripts/validate-content.mjs",
     "build": "npm run validate:content && astro build",
     "preview": "astro preview"
   },
@@ -17,6 +17,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "@types/node": "^22.15.30",
+    "gray-matter": "^4.0.3",
     "typescript": "^5.8.3",
     "vitest": "^2.1.8"
   }

@@ -1,25 +1,21 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
+import matter from "gray-matter";
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const chapterNoPattern = /^[0-9]{3}$/;
+const bookVisibilityValues = new Set(["public", "hidden"]);
+const bookCopyrightStatusValues = new Set([
+  "public-domain",
+  "authorized",
+  "private-draft",
+  "unknown"
+]);
+const chapterStatusValues = new Set(["draft", "review", "published", "archived"]);
 
 function parseFrontmatter(markdown) {
-  const match = markdown.match(/^---\n([\s\S]*?)\n---\n?/);
-  if (!match) return {};
-
-  return Object.fromEntries(
-    match[1]
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => {
-        const index = line.indexOf(":");
-        const key = line.slice(0, index).trim();
-        const rawValue = line.slice(index + 1).trim().replace(/^"|"$/g, "");
-        return [key, rawValue];
-      })
-  );
+  return matter(markdown).data;
 }
 
 async function readJson(filePath) {
@@ -35,17 +31,31 @@ async function readDirFiles(dirPath) {
   }
 }
 
+async function readAstroSite(projectRoot) {
+  const astroConfigPath = path.join(projectRoot, "astro.config.mjs");
+
+  try {
+    await fs.access(astroConfigPath);
+  } catch {
+    return undefined;
+  }
+
+  const astroConfigModule = await import(pathToFileURL(astroConfigPath).href);
+  return astroConfigModule.default?.site;
+}
+
 export async function validateProjectContent({
   projectRoot = process.cwd(),
-  astroSite = "https://mixtxt.example.com"
+  astroSite
 } = {}) {
   const errors = [];
+  const resolvedAstroSite = astroSite ?? (await readAstroSite(projectRoot));
 
   const sitePath = path.join(projectRoot, "src/data/site.json");
   const site = await readJson(sitePath);
 
-  if (site.baseUrl !== astroSite) {
-    errors.push(`site.baseUrl "${site.baseUrl}" does not match Astro site "${astroSite}".`);
+  if (resolvedAstroSite && site.baseUrl !== resolvedAstroSite) {
+    errors.push(`site.baseUrl "${site.baseUrl}" does not match Astro site "${resolvedAstroSite}".`);
   }
 
   const bookFiles = await readDirFiles(path.join(projectRoot, "src/content/books"));
@@ -57,6 +67,14 @@ export async function validateProjectContent({
   for (const book of books) {
     if (!slugPattern.test(book.slug)) {
       errors.push(`Invalid book slug "${book.slug}".`);
+    }
+
+    if (!bookVisibilityValues.has(book.visibility)) {
+      errors.push(`Invalid book visibility "${book.visibility}" for "${book.slug}".`);
+    }
+
+    if (!bookCopyrightStatusValues.has(book.copyrightStatus)) {
+      errors.push(`Invalid book copyrightStatus "${book.copyrightStatus}" for "${book.slug}".`);
     }
 
     if (bookBySlug.has(book.slug)) {
@@ -88,6 +106,10 @@ export async function validateProjectContent({
 
     if (!chapterNoPattern.test(frontmatter.chapterNo ?? "")) {
       errors.push(`Invalid chapterNo "${frontmatter.chapterNo}" in ${fileName}.`);
+    }
+
+    if (!chapterStatusValues.has(frontmatter.status)) {
+      errors.push(`Invalid chapter status "${frontmatter.status}" in ${fileName}.`);
     }
 
     if (!slugPattern.test(frontmatter.slug ?? "")) {
@@ -126,8 +148,7 @@ const invokedDirectly =
   path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname);
 
 if (invokedDirectly) {
-  const astroSite = "https://mixtxt.example.com";
-  const errors = await validateProjectContent({ projectRoot: process.cwd(), astroSite });
+  const errors = await validateProjectContent({ projectRoot: process.cwd() });
 
   if (errors.length > 0) {
     for (const error of errors) {
