@@ -1,0 +1,89 @@
+media:
+  - name: covers
+    label: Covers
+    input: public/covers
+    output: /covers
+    rename: safe
+    extensions: [jpg, jpeg, png, webp, svg]
+
+content:
+  - name: site
+    label: 网站设置
+    type: file
+    path: src/data/site.json
+    format: json
+    fields:
+      - { name: title, label: 网站名称, type: string, required: true }
+      - { name: description, label: 网站描述, type: text, required: true }
+      - { name: author, label: 作者, type: string, required: true }
+      - { name: defaultLanguage, label: 默认语言, type: string }
+      - { name: baseUrl, label: 站点地址, type: string, required: true }
+      - { name: github, label: GitHub 地址, type: string }
+      - { name: copyright, label: 版权说明, type: text }
+
+  - name: books
+    label: 书籍
+    type: collection
+    path: src/content/books
+    format: json
+    filename: "{slug}.json"
+    fields:
+      - { name: title, label: 书名, type: string, required: true }
+      - { name: slug, label: Slug, type: string, required: true }
+      - { name: original, label: 原作, type: string }
+      - { name: author, label: 原作作者, type: string }
+      - { name: adaptor, label: 改编者, type: string }
+      - { name: status, label: 连载状态, type: string, required: true }
+      - { name: visibility, label: 可见性, type: string, required: true }
+      - { name: summary, label: 简介, type: text, required: true }
+      - { name: cover, label: 封面, type: image, options: { media: covers } }
+      - { name: tags, label: 标签, type: string, options: { multiple: true } }
+      - { name: copyrightStatus, label: 版权状态, type: string, required: true }
+      - { name: startedAt, label: 开始日期, type: date, required: true }
+      - { name: updatedAt, label: 更新日期, type: date, required: true }
+
+  - name: chapters
+    label: 章节
+    type: collection
+    path: src/content/chapters
+    format: yaml-frontmatter
+    filename: "{book}-{chapterNo}-{slug}.md"
+    fields:
+      - { name: book, label: 所属书籍, type: string, required: true }
+      - { name: chapterNo, label: 章节号, type: string, required: true }
+      - { name: title, label: 章节标题, type: string, required: true }
+      - { name: slug, label: Slug, type: string, required: true }
+      - { name: status, label: 状态, type: string, required: true }
+      - { name: summary, label: 摘要, type: text, required: true }
+      - { name: createdAt, label: 创建日期, type: date, required: true }
+      - { name: updatedAt, label: 更新日期, type: date, required: true }
+      - { name: body, label: 正文, type: rich-text, required: true, options: { format: markdown } }
+
+  - name: releases
+    label: 版本说明
+    type: collection
+    path: src/content/releases
+    format: yaml-frontmatter
+    filename: "{book}-{versionSlug}.md"
+    fields:
+      - { name: book, label: 所属书籍, type: string, required: true }
+      - { name: version, label: 版本号, type: string, required: true }
+      - { name: versionSlug, label: 版本 Slug, type: string, required: true }
+      - { name: title, label: 标题, type: string, required: true }
+      - { name: date, label: 日期, type: date, required: true }
+      - { name: gitTag, label: Git 标签, type: string }
+      - { name: body, label: 正文, type: rich-text, required: true, options: { format: markdown } }
+
+  - name: prompts
+    label: 提示词模板
+    type: collection
+    path: src/content/prompts
+    format: yaml-frontmatter
+    filename: "{slug}.md"
+    fields:
+      - { name: title, label: 标题, type: string, required: true }
+      - { name: slug, label: Slug, type: string, required: true }
+      - { name: category, label: 分类, type: string, required: true }
+      - { name: status, label: 状态, type: string, required: true }
+      - { name: updatedAt, label: 更新日期, type: date, required: true }
+      - { name: body, label: 正文, type: rich-text, required: true, options: { format: markdown } }

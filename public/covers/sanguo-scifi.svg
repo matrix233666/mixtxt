@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1600">
+  <rect width="1200" height="1600" fill="#111827"/>
+  <rect x="96" y="96" width="1008" height="1408" rx="40" fill="#1f2937" stroke="#f59e0b" stroke-width="8"/>
+  <path d="M248 320h164l188 352 188-352h164L716 1120H552z" fill="#f9fafb"/>
+  <text x="600" y="1240" text-anchor="middle" fill="#f9fafb" font-size="92" font-family="Arial, sans-serif">三国演义</text>
+  <text x="600" y="1348" text-anchor="middle" fill="#f59e0b" font-size="72" font-family="Arial, sans-serif">星火纪元</text>
+</svg>

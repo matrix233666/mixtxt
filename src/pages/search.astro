@@ -1,0 +1,15 @@
+---
+import AppFooter from "../components/AppFooter.astro";
+import AppHeader from "../components/AppHeader.astro";
+import SearchBox from "../components/SearchBox.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import "../styles/search.css";
+---
+
+<BaseLayout title="搜索 | MixTXT" description="搜索 MixTXT 已发布内容">
+  <AppHeader />
+  <main class="page-shell page-stack">
+    <SearchBox />
+  </main>
+  <AppFooter />
+</BaseLayout>

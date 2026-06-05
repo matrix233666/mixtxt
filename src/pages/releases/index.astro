@@ -1,0 +1,48 @@
+---
+import { render } from "astro:content";
+import AppFooter from "../../components/AppFooter.astro";
+import AppHeader from "../../components/AppHeader.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getBookBySlug, getPublicReleases } from "../../lib/content";
+
+const releases = await getPublicReleases();
+const releaseCards = await Promise.all(
+  releases.map(async (release) => {
+    const [book, { Content }] = await Promise.all([
+      getBookBySlug(release.data.book),
+      render(release)
+    ]);
+
+    return {
+      release,
+      book,
+      Content
+    };
+  })
+);
+---
+
+<BaseLayout title="版本说明 | MixTXT" description="MixTXT 公开发布版本说明">
+  <AppHeader />
+  <main class="page-shell page-stack">
+    <section class="hero-block">
+      <p class="eyebrow">Release Notes</p>
+      <h1>版本说明</h1>
+      <p>按发布时间倒序整理当前公开版本的发布记录。</p>
+    </section>
+
+    <section class="section-block" aria-label="公开版本列表">
+      {releaseCards.map(({ release, book, Content }) => (
+        <article class="card-surface">
+          <p class="eyebrow">
+            <time datetime={release.data.date}>{release.data.date}</time>
+          </p>
+          <h2>{release.data.title}</h2>
+          <p class="book-summary">{book?.data.title ?? release.data.book}</p>
+          <Content />
+        </article>
+      ))}
+    </section>
+  </main>
+  <AppFooter />
+</BaseLayout>

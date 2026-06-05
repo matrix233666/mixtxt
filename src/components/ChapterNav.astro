@@ -1,0 +1,29 @@
+---
+interface ChapterRef {
+  data: {
+    book: string;
+    slug: string;
+    title: string;
+  };
+}
+
+interface Props {
+  prev: ChapterRef | null;
+  next: ChapterRef | null;
+}
+
+const { prev, next } = Astro.props;
+---
+
+<nav class="chapter-nav" aria-label="章节导航">
+  {prev ? (
+    <a href={`/books/${prev.data.book}/${prev.data.slug}/`}>上一章：{prev.data.title}</a>
+  ) : (
+    <span>已是第一章</span>
+  )}
+  {next ? (
+    <a href={`/books/${next.data.book}/${next.data.slug}/`}>下一章：{next.data.title}</a>
+  ) : (
+    <span>已是最后一章</span>
+  )}
+</nav>

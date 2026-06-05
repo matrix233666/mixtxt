@@ -1,0 +1,9 @@
+{
+  "title": "MixTXT",
+  "description": "fixture",
+  "author": "matrix",
+  "defaultLanguage": "zh-CN",
+  "baseUrl": "https://mixtxt.example.com",
+  "github": "https://example.com/repo",
+  "copyright": "fixture"
+}

@@ -1,0 +1,46 @@
+.reader-shell {
+  padding: 32px 0 56px;
+}
+
+.reader-page {
+  width: min(calc(100% - 32px), 52rem);
+  margin: 0 auto;
+  display: grid;
+  gap: 24px;
+}
+
+.reader-header {
+  display: grid;
+  gap: 10px;
+}
+
+.reader-meta {
+  display: flex;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.reader-body {
+  font-size: 1.125rem;
+  line-height: 1.8;
+  display: grid;
+  gap: 16px;
+}
+
+.reader-body h2,
+.reader-body h3 {
+  margin-top: 12px;
+}
+
+.chapter-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.chapter-nav a {
+  color: var(--accent);
+}

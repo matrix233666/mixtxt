@@ -1,0 +1,130 @@
+---
+---
+
+<section class="search-panel card-surface" data-search-root>
+  <div class="search-panel__header">
+    <p class="eyebrow">Pagefind</p>
+    <h1>搜索</h1>
+    <p class="search-panel__summary">搜索已发布章节与页面内容。</p>
+  </div>
+
+  <form class="search-form" data-search-form>
+    <label class="search-form__field">
+      <span class="search-form__label">关键词</span>
+      <input
+        class="search-form__input"
+        type="search"
+        name="q"
+        placeholder="输入标题、角色或片段"
+        autocomplete="off"
+        data-search-input
+      />
+    </label>
+    <button class="search-form__button" type="submit">搜索</button>
+  </form>
+
+  <p class="search-status" data-search-status>输入关键词后开始搜索。</p>
+  <ul class="search-results" data-search-results aria-live="polite"></ul>
+</section>
+
+<script is:inline>
+  const root = document.querySelector("[data-search-root]");
+  const form = root?.querySelector("[data-search-form]");
+  const input = root?.querySelector("[data-search-input]");
+  const status = root?.querySelector("[data-search-status]");
+  const results = root?.querySelector("[data-search-results]");
+
+  if (
+    root &&
+    form instanceof HTMLFormElement &&
+    input instanceof HTMLInputElement &&
+    status instanceof HTMLParagraphElement &&
+    results instanceof HTMLUListElement
+  ) {
+    let pagefind;
+
+    const setStatus = (message) => {
+      status.textContent = message;
+    };
+
+    const clearResults = () => {
+      results.replaceChildren();
+    };
+
+    const createResultItem = (item) => {
+      const listItem = document.createElement("li");
+      listItem.className = "search-result";
+
+      const link = document.createElement("a");
+      link.className = "search-result__link";
+      link.href = item.url;
+
+      const title = document.createElement("strong");
+      title.textContent = item.meta.title || "未命名页面";
+
+      const excerpt = document.createElement("p");
+      excerpt.textContent = item.excerpt;
+
+      link.append(title, excerpt);
+      listItem.append(link);
+
+      return listItem;
+    };
+
+    const renderResults = (items) => {
+      results.replaceChildren(...items.map((item) => createResultItem(item)));
+    };
+
+    const loadPagefind = async () => {
+      if (!pagefind) {
+        pagefind = await import("/pagefind/pagefind.js");
+      }
+
+      return pagefind;
+    };
+
+    const runSearch = async (rawQuery) => {
+      const query = rawQuery.trim();
+
+      if (!query) {
+        clearResults();
+        setStatus("输入关键词后开始搜索。");
+        return;
+      }
+
+      setStatus("正在搜索…");
+
+      try {
+        const library = await loadPagefind();
+        const search = await library.search(query);
+        const items = await Promise.all(search.results.map((result) => result.data()));
+
+        if (items.length === 0) {
+          clearResults();
+          setStatus(`没有找到与“${query}”相关的内容。`);
+          return;
+        }
+
+        renderResults(items);
+        setStatus(`找到 ${items.length} 条结果。`);
+      } catch (error) {
+        clearResults();
+        setStatus("搜索暂时不可用，请稍后再试。");
+        console.error(error);
+      }
+    };
+
+    const initialQuery = new URL(window.location.href).searchParams.get("q") ?? "";
+    input.value = initialQuery;
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const query = input.value.trim();
+      const nextUrl = query ? `/search/?q=${encodeURIComponent(query)}` : "/search/";
+      window.history.replaceState({}, "", nextUrl);
+      await runSearch(query);
+    });
+
+    void runSearch(initialQuery);
+  }
+</script>

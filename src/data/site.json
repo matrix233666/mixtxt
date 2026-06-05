@@ -1,0 +1,9 @@
+{
+  "title": "MixTXT",
+  "description": "用 AI 改编经典小说的个人创作站。",
+  "author": "matrix",
+  "defaultLanguage": "zh-CN",
+  "baseUrl": "https://mixtxt.example.com",
+  "github": "https://github.com/a1pha3/mixtxt",
+  "copyright": "本站只公开公版作品或已获得授权的改编内容。"
+}
