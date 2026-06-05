@@ -5,6 +5,7 @@ import matter from "gray-matter";
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const chapterNoPattern = /^[0-9]{3}$/;
+const bookStatusValues = new Set(["planning", "serializing", "completed", "paused"]);
 const bookVisibilityValues = new Set(["public", "hidden"]);
 const bookCopyrightStatusValues = new Set([
   "public-domain",
@@ -22,10 +23,14 @@ async function readJson(filePath) {
   return JSON.parse(await fs.readFile(filePath, "utf8"));
 }
 
-async function readDirFiles(dirPath) {
+async function readDirFiles(dirPath, extension) {
   try {
-    const names = await fs.readdir(dirPath);
-    return names.sort().map((name) => path.join(dirPath, name));
+    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isFile() && entry.name.endsWith(extension))
+      .map((entry) => entry.name)
+      .sort()
+      .map((name) => path.join(dirPath, name));
   } catch {
     return [];
   }
@@ -58,8 +63,8 @@ export async function validateProjectContent({
     errors.push(`site.baseUrl "${site.baseUrl}" does not match Astro site "${resolvedAstroSite}".`);
   }
 
-  const bookFiles = await readDirFiles(path.join(projectRoot, "src/content/books"));
-  const chapterFiles = await readDirFiles(path.join(projectRoot, "src/content/chapters"));
+  const bookFiles = await readDirFiles(path.join(projectRoot, "src/content/books"), ".json");
+  const chapterFiles = await readDirFiles(path.join(projectRoot, "src/content/chapters"), ".md");
 
   const books = await Promise.all(bookFiles.map(readJson));
   const bookBySlug = new Map();
@@ -67,6 +72,10 @@ export async function validateProjectContent({
   for (const book of books) {
     if (!slugPattern.test(book.slug)) {
       errors.push(`Invalid book slug "${book.slug}".`);
+    }
+
+    if (!bookStatusValues.has(book.status)) {
+      errors.push(`Invalid book status "${book.status}" for "${book.slug}".`);
     }
 
     if (!bookVisibilityValues.has(book.visibility)) {

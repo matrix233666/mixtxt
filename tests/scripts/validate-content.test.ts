@@ -57,9 +57,14 @@ describe("validateProjectContent", () => {
       async (root) => {
         const bookPath = path.join(root, "src/content/books/book.json");
         const book = JSON.parse(await fs.readFile(bookPath, "utf8"));
+        book.status = "retired";
         book.visibility = "secret";
         book.copyrightStatus = "pirated";
         await writeJson(bookPath, book);
+
+        await fs.writeFile(path.join(root, "src/content/books/ignore.txt"), "ignore", "utf8");
+        await fs.mkdir(path.join(root, "src/content/chapters/nested"));
+        await fs.writeFile(path.join(root, "src/content/chapters/nested/ignore.md"), "---\n---\n", "utf8");
 
         const chapterPath = path.join(root, "src/content/chapters/book-001-start.md");
         const chapter = await fs.readFile(chapterPath, "utf8");
@@ -76,6 +81,7 @@ describe("validateProjectContent", () => {
             astroSite: "https://mixtxt.example.com"
           })
         ).resolves.toEqual([
+          'Invalid book status "retired" for "book".',
           'Invalid book visibility "secret" for "book".',
           'Invalid book copyrightStatus "pirated" for "book".',
           'Invalid chapter status "live" in book-001-start.md.'
