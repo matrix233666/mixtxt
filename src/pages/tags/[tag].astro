@@ -1,0 +1,46 @@
+---
+import AppFooter from "../../components/AppFooter.astro";
+import AppHeader from "../../components/AppHeader.astro";
+import BookCard from "../../components/BookCard.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getAllTags, getBooksByTag } from "../../lib/content";
+
+export async function getStaticPaths() {
+  const tags = await getAllTags();
+
+  return tags.map((tag) => ({
+    params: {
+      tag
+    },
+    props: {
+      tag
+    }
+  }));
+}
+
+const { tag } = Astro.props;
+const books = await getBooksByTag(tag);
+---
+
+<BaseLayout title={`${tag} | MixTXT`} description={`MixTXT 中与 ${tag} 相关的公开作品`}>
+  <AppHeader />
+  <main class="page-shell page-stack">
+    <section class="hero-block">
+      <p class="eyebrow">标签聚合</p>
+      <h1>{tag}</h1>
+      <p>浏览这个标签下的公开作品。</p>
+    </section>
+
+    <section class="section-block">
+      <div class="section-header">
+        <h2>书籍</h2>
+      </div>
+      <div class="book-grid">
+        {books.map((book) => (
+          <BookCard book={book} />
+        ))}
+      </div>
+    </section>
+  </main>
+  <AppFooter />
+</BaseLayout>

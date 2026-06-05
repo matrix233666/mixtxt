@@ -3,10 +3,13 @@ import AppFooter from "../components/AppFooter.astro";
 import AppHeader from "../components/AppHeader.astro";
 import BookCard from "../components/BookCard.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { getPublicBooks, getRecentChapters } from "../lib/content";
+import { getAllTags, getPublicBooks, getRecentChapters } from "../lib/content";
 
-const books = await getPublicBooks();
-const recentChapters = await getRecentChapters(5);
+const [books, recentChapters, tags] = await Promise.all([
+  getPublicBooks(),
+  getRecentChapters(5),
+  getAllTags()
+]);
 ---
 
 <BaseLayout>
@@ -16,6 +19,14 @@ const recentChapters = await getRecentChapters(5);
       <p class="eyebrow">AI 改编小说</p>
       <h1>MixTXT</h1>
       <p>用 AI 改编经典小说的个人创作站。</p>
+      <ul class="tag-row" aria-label="发现入口">
+        <li>
+          <a href="/search/">搜索</a>
+        </li>
+        <li>
+          <a href="/releases/">发布记录</a>
+        </li>
+      </ul>
     </section>
 
     <section class="section-block">
@@ -44,6 +55,21 @@ const recentChapters = await getRecentChapters(5);
         ))}
       </ul>
     </section>
+
+    {tags.length > 0 && (
+      <section class="section-block">
+        <div class="section-header">
+          <h2>标签</h2>
+        </div>
+        <ul class="tag-row" aria-label="标签列表">
+          {tags.map((tag) => (
+            <li>
+              <a href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
   </main>
   <AppFooter />
 </BaseLayout>

@@ -1,13 +1,13 @@
-import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
+import { ensureSiteBuilt } from "./ensure-built";
 
-const distDir = path.resolve("dist");
+let distDir: string;
 
 describe("built routes", () => {
-  beforeAll(() => {
-    execSync("npm run build", { stdio: "pipe" });
+  beforeAll(async () => {
+    distDir = await ensureSiteBuilt();
   });
 
   it("builds the homepage", () => {

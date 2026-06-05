@@ -24,10 +24,37 @@ export type ChapterEntryLike = {
   };
 };
 
+export type ReleaseEntryLike = {
+  id: string;
+  body?: string;
+  data: {
+    book: string;
+    version: string;
+    versionSlug: string;
+    title: string;
+    date: string;
+    gitTag?: string;
+  };
+};
+
+function compareDescByDate(left: string, right: string) {
+  return right.localeCompare(left);
+}
+
+function getPublicBookSlugSet<T extends BookEntryLike>(books: readonly T[]) {
+  return new Set(filterPublicBooks(books).map((book) => book.data.slug));
+}
+
+function getSortedUniqueTags<T extends BookEntryLike>(books: readonly T[]) {
+  return [...new Set(books.flatMap((book) => book.data.tags ?? []))].sort((a, b) =>
+    a.localeCompare(b)
+  );
+}
+
 export function filterPublicBooks<T extends BookEntryLike>(books: readonly T[]) {
   return [...books]
     .filter((book) => book.data.visibility === "public")
-    .sort((a, b) => b.data.updatedAt.localeCompare(a.data.updatedAt));
+    .sort((a, b) => compareDescByDate(a.data.updatedAt, b.data.updatedAt));
 }
 
 export function findPublicBookBySlug<T extends BookEntryLike>(
@@ -42,13 +69,11 @@ export function filterPublishedChapters<T extends ChapterEntryLike>(
   books?: readonly BookEntryLike[],
   bookSlug?: string
 ) {
-  const publicBookSlugs = new Set(
-    (books ? filterPublicBooks(books) : []).map((book) => book.data.slug)
-  );
+  const publicBookSlugs = books ? getPublicBookSlugSet(books) : null;
 
   return [...chapters]
     .filter((chapter) => chapter.data.status === "published")
-    .filter((chapter) => (books ? publicBookSlugs.has(chapter.data.book) : true))
+    .filter((chapter) => (publicBookSlugs ? publicBookSlugs.has(chapter.data.book) : true))
     .filter((chapter) => (bookSlug ? chapter.data.book === bookSlug : true))
     .sort(
       (a, b) =>
@@ -99,7 +124,7 @@ export async function getRecentChapters(limit = 10) {
   const normalizedLimit = Math.max(0, limit);
 
   return [...chapters]
-    .sort((a, b) => b.data.updatedAt.localeCompare(a.data.updatedAt))
+    .sort((a, b) => compareDescByDate(a.data.updatedAt, b.data.updatedAt))
     .slice(0, normalizedLimit);
 }
 
@@ -114,7 +139,57 @@ export async function getChapterNav(bookSlug: string, chapterSlug: string) {
 
 export async function getAllTags() {
   const books = await getPublicBooks();
-  return [...new Set(books.flatMap((book) => book.data.tags ?? []))].sort((a, b) =>
-    a.localeCompare(b)
-  );
+  return getSortedUniqueTags(books);
+}
+
+export async function getBooksByTag(tag: string) {
+  const books = await getPublicBooks();
+  return books.filter((book) => (book.data.tags ?? []).includes(tag));
+}
+
+export async function getPublicReleases() {
+  const [books, releases] = await Promise.all([
+    getCollection("books"),
+    getCollection("releases")
+  ]);
+  const publicBookSlugs = getPublicBookSlugSet(books);
+
+  return [...releases]
+    .filter((release) => publicBookSlugs.has(release.data.book))
+    .sort(
+      (a, b) =>
+        compareDescByDate(a.data.date, b.data.date) ||
+        a.data.book.localeCompare(b.data.book) ||
+        a.data.version.localeCompare(b.data.version)
+    );
+}
+
+export async function getRecentPublicUpdates(limit = 10) {
+  const chapters = await getPublishedChapters();
+  const normalizedLimit = Math.max(0, limit);
+
+  return [...chapters]
+    .sort((a, b) => compareDescByDate(a.data.updatedAt, b.data.updatedAt))
+    .slice(0, normalizedLimit)
+    .map((chapter) => ({
+      kind: "chapter" as const,
+      chapter
+    }));
+}
+
+export async function getPublicSitemapEntries() {
+  const [books, chapters, tags] = await Promise.all([
+    getPublicBooks(),
+    getPublishedChapters(),
+    getAllTags()
+  ]);
+
+  return [
+    "/",
+    ...books.map((book) => `/books/${book.data.slug}/`),
+    ...chapters.map((chapter) => `/books/${chapter.data.book}/${chapter.data.slug}/`),
+    "/releases/",
+    "/search/",
+    ...tags.map((tag) => `/tags/${encodeURIComponent(tag)}/`)
+  ];
 }
