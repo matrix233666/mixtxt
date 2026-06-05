@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "check": "astro check",
-    "test": "vitest --passWithNoTests",
+    "test": "node scripts/run-vitest.mjs",
     "validate:content": "node -e \"process.exit(0)\"",
     "build": "npm run validate:content && astro build",
     "preview": "astro preview"
