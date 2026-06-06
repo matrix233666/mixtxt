@@ -29,7 +29,7 @@ const { book } = Astro.props;
   data-book-status={book.data.status}
   data-book-updated-at={book.data.updatedAt}
   data-book-title={book.data.title.toLowerCase()}
-  data-book-tags={(book.data.tags ?? []).join("|")}
+  data-book-tags={JSON.stringify(book.data.tags ?? [])}
 >
   <a class="book-card__link" href={`/books/${book.data.slug}/`}>
     <div class="book-card__header">

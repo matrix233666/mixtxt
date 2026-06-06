@@ -7,7 +7,8 @@ const distDir = path.resolve("dist");
 const cacheDir = path.resolve("tests", "build", ".cache");
 const lockDir = path.join(cacheDir, "build.lock");
 const stampFile = path.join(cacheDir, "build.stamp");
-const lockTtlMs = 5 * 60 * 1000;
+// Keep stale-lock recovery below the default Vitest hook timeout.
+const lockTtlMs = 8 * 1000;
 
 function getNewestMtimeMs(targetPath: string): number {
   const stats = fs.statSync(targetPath);

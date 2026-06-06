@@ -105,7 +105,14 @@ const [books, tags] = await Promise.all([getPublicBooks(), getAllTags()]);
 
             const matchesStatus =
               statusValue === "all" || card.dataset.bookStatus === statusValue;
-            const tags = (card.dataset.bookTags ?? "").split("|").filter(Boolean);
+            const tags = (() => {
+              try {
+                const parsed = JSON.parse(card.dataset.bookTags ?? "[]");
+                return Array.isArray(parsed) ? parsed.filter((tag) => typeof tag === "string") : [];
+              } catch {
+                return [];
+              }
+            })();
             const matchesTag = tagValue === "all" || tags.includes(tagValue);
             const isVisible = matchesStatus && matchesTag;
 
