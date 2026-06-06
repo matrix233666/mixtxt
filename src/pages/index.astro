@@ -110,7 +110,11 @@ const continueReadingBooks = books.map((book) => ({
 ></script>
 
 <script>
-  import { readStoredReaderProgress, resolveProgressChapter } from "../lib/reading";
+  import {
+    readEmbeddedJson,
+    resolveHomeContinueReadingItems,
+    sanitizeContinueReadingBooks
+  } from "../lib/reader-client";
 
   const continueReadingRoot = document.querySelector("[data-continue-reading-home]");
   const continueReadingList = continueReadingRoot?.querySelector("[data-continue-reading-list]");
@@ -121,24 +125,8 @@ const continueReadingBooks = books.map((book) => ({
     continueReadingList instanceof HTMLUListElement &&
     continueReadingData instanceof HTMLScriptElement
   ) {
-    type ContinueReadingBook = {
-      slug: string;
-      title: string;
-      chapters: Array<{
-        slug: string;
-        title: string;
-        url: string;
-      }>;
-    };
-
-    const books = JSON.parse(continueReadingData.textContent ?? "[]") as ContinueReadingBook[];
-    const items = books
-      .map((book) => {
-        const progress = readStoredReaderProgress(window.localStorage, book.slug);
-        const chapter = resolveProgressChapter(book.chapters, progress);
-        return chapter ? { ...chapter, bookTitle: book.title } : null;
-      })
-      .filter((item) => item !== null);
+    const books = sanitizeContinueReadingBooks(readEmbeddedJson(continueReadingData.textContent, []));
+    const items = resolveHomeContinueReadingItems(window.localStorage, books);
 
     if (items.length > 0) {
       const nodes = items.map((item) => {

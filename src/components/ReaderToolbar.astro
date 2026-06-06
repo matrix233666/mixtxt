@@ -80,10 +80,13 @@ const { bookSlug, chapterSlug, chapterTitle, directoryId } = Astro.props;
 
 <script>
   import {
-    readStoredReaderPreferences,
+    applyReaderPreferencesToTargets,
+    getDirectoryStateForViewport,
+    hydrateReaderPreferences
+  } from "../lib/reader-client";
+  import {
     readerPreferenceKeys,
     type ReaderPreferenceKey,
-    type ReaderPreferences,
     writeStoredReaderPreference,
     writeStoredReaderProgress
   } from "../lib/reading";
@@ -102,21 +105,6 @@ const { bookSlug, chapterSlug, chapterTitle, directoryId } = Astro.props;
     controls.every((control) => control instanceof HTMLSelectElement)
   ) {
     /**
-     * Applies the current reader preferences to both the page and the document root.
-     */
-    const applyPreferences = (preferences: ReaderPreferences) => {
-      document.documentElement.dataset.readerTheme = preferences.theme;
-      document.documentElement.dataset.readerFontSize = preferences.fontSize;
-      document.documentElement.dataset.readerLineHeight = preferences.lineHeight;
-      document.documentElement.dataset.readerWidth = preferences.width;
-
-      readerRoot.dataset.readerTheme = preferences.theme;
-      readerRoot.dataset.readerFontSize = preferences.fontSize;
-      readerRoot.dataset.readerLineHeight = preferences.lineHeight;
-      readerRoot.dataset.readerWidth = preferences.width;
-    };
-
-    /**
      * Keeps the toggle button state aligned with the current drawer visibility.
      */
     const syncDirectoryState = () => {
@@ -129,8 +117,10 @@ const { bookSlug, chapterSlug, chapterTitle, directoryId } = Astro.props;
      */
     const desktopMediaQuery = window.matchMedia("(min-width: 960px)");
     const syncDirectoryForViewport = () => {
-      directory.open = desktopMediaQuery.matches;
-      syncDirectoryState();
+      const nextState = getDirectoryStateForViewport(desktopMediaQuery.matches);
+      directory.open = nextState.open;
+      readerRoot.dataset.directoryOpen = nextState.expanded;
+      directoryToggle.setAttribute("aria-expanded", nextState.expanded);
     };
 
     /**
@@ -140,7 +130,7 @@ const { bookSlug, chapterSlug, chapterTitle, directoryId } = Astro.props;
       return typeof value === "string" && (readerPreferenceKeys as readonly string[]).includes(value);
     };
 
-    const preferences = readStoredReaderPreferences(window.localStorage);
+    const preferences = hydrateReaderPreferences(window.localStorage, document.documentElement, readerRoot);
 
     controls.forEach((control) => {
       if (!(control instanceof HTMLSelectElement)) {
@@ -156,7 +146,6 @@ const { bookSlug, chapterSlug, chapterTitle, directoryId } = Astro.props;
     });
 
     readerRoot.dataset.readerEnhanced = "true";
-    applyPreferences(preferences);
 
     if (toolbar.dataset.bookSlug && toolbar.dataset.chapterSlug) {
       writeStoredReaderProgress(window.localStorage, {
@@ -184,7 +173,7 @@ const { bookSlug, chapterSlug, chapterTitle, directoryId } = Astro.props;
           control.value
         );
 
-        applyPreferences(nextPreferences);
+        applyReaderPreferencesToTargets(nextPreferences, document.documentElement, readerRoot);
       });
     });
 

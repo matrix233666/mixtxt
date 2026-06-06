@@ -1,0 +1,40 @@
+.reader-directory {
+  position: relative;
+}
+
+.reader-directory summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.reader-directory .chapter-list {
+  margin-top: 16px;
+}
+
+@media (min-width: 960px) {
+  .reader-directory {
+    position: sticky;
+    top: 24px;
+    max-height: calc(100vh - 48px);
+    overflow: auto;
+  }
+
+  [data-reader-enhanced="true"] .reader-directory summary {
+    display: none;
+  }
+}
+
+@media (max-width: 959px) {
+  [data-reader-enhanced="true"] .reader-directory {
+    order: 3;
+  }
+
+  [data-reader-enhanced="true"] .reader-directory:not([open]) {
+    display: none;
+  }
+
+  [data-reader-enhanced="true"] .reader-directory summary {
+    display: none;
+  }
+}

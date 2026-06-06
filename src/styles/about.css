@@ -1,0 +1,9 @@
+.about-page {
+  display: grid;
+  gap: 24px;
+}
+
+.about-page section {
+  display: grid;
+  gap: 10px;
+}

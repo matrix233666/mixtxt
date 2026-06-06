@@ -1,0 +1,135 @@
+.reader-shell {
+  padding: 32px 0 56px;
+}
+
+.reader-page {
+  width: min(calc(100% - 32px), 88rem);
+  margin: 0 auto;
+  display: grid;
+  gap: 24px;
+}
+
+.reader-header {
+  display: grid;
+  gap: 10px;
+}
+
+.reader-header__back {
+  color: var(--muted);
+}
+
+.reader-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.reader-content {
+  width: min(100%, 52rem);
+  justify-self: center;
+}
+
+.reader-body {
+  display: grid;
+  gap: 16px;
+  font-size: 1.125rem;
+  line-height: 1.8;
+}
+
+.reader-body h2,
+.reader-body h3 {
+  margin-top: 12px;
+}
+
+.chapter-nav {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+}
+
+.chapter-nav__links {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.chapter-nav__back {
+  color: var(--muted);
+}
+
+.chapter-nav a {
+  color: var(--accent);
+}
+
+[data-reader-font-size="small"] .reader-body {
+  font-size: 1rem;
+}
+
+[data-reader-font-size="medium"] .reader-body {
+  font-size: 1.125rem;
+}
+
+[data-reader-font-size="large"] .reader-body {
+  font-size: 1.25rem;
+}
+
+[data-reader-line-height="compact"] .reader-body {
+  line-height: 1.65;
+}
+
+[data-reader-line-height="standard"] .reader-body {
+  line-height: 1.8;
+}
+
+[data-reader-line-height="relaxed"] .reader-body {
+  line-height: 2;
+}
+
+[data-reader-width="standard"] .reader-content {
+  width: min(100%, 52rem);
+}
+
+[data-reader-width="wide"] .reader-content {
+  width: min(100%, 64rem);
+}
+
+@media (min-width: 960px) {
+  .reader-page {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 20rem);
+    align-items: start;
+  }
+
+  .reader-header,
+  .reader-toolbar,
+  .reader-content,
+  .chapter-nav {
+    grid-column: 1;
+  }
+
+  .reader-directory {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+  }
+}
+
+@media (max-width: 959px) {
+  .reader-shell {
+    padding: 24px 0 48px;
+  }
+
+  .reader-page {
+    width: min(calc(100% - 24px), 52rem);
+  }
+
+  .reader-content {
+    width: 100%;
+  }
+
+  .chapter-nav__links {
+    flex-direction: column;
+  }
+}

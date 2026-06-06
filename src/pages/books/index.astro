@@ -4,6 +4,7 @@ import AppHeader from "../../components/AppHeader.astro";
 import BookCard from "../../components/BookCard.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getAllTags, getPublicBooks } from "../../lib/content";
+import "../../styles/books.css";
 
 const [books, tags] = await Promise.all([getPublicBooks(), getAllTags()]);
 ---
@@ -62,7 +63,13 @@ const [books, tags] = await Promise.all([getPublicBooks(), getAllTags()]);
   <AppFooter />
 </BaseLayout>
 
-<script is:inline>
+<script>
+  import {
+    filterAndSortBooks,
+    readBooksCardRecord,
+    sanitizeBooksSortMode
+  } from "../../lib/reader-client";
+
   const filtersRoot = document.querySelector("[data-books-filters]");
   const grid = document.querySelector("[data-books-grid]");
   const count = document.querySelector("[data-books-count]");
@@ -81,65 +88,30 @@ const [books, tags] = await Promise.all([getPublicBooks(), getAllTags()]);
       tagSelect instanceof HTMLSelectElement &&
       sortSelect instanceof HTMLSelectElement
     ) {
-      const cards = Array.from(grid.querySelectorAll("[data-book-card]"));
-      const completionRank = {
-        completed: 0,
-        serializing: 1,
-        planning: 2,
-        paused: 3
-      };
+      const cards = Array.from(grid.querySelectorAll("[data-book-card]")).flatMap((card) => {
+        const record = readBooksCardRecord(card);
+        return record ? [record] : [];
+      });
 
       /**
        * Applies the active filters and sort mode to the static books grid.
        */
       const renderGrid = () => {
-        const statusValue = statusSelect.value;
-        const tagValue = tagSelect.value;
-        const sortValue = sortSelect.value;
+        const visibleCards = filterAndSortBooks(cards, {
+          status: statusSelect.value,
+          tag: tagSelect.value,
+          sort: sanitizeBooksSortMode(sortSelect.value)
+        });
+        const orderedElements = visibleCards.flatMap((card) => (card.element ? [card.element] : []));
+        const visibleElements = new Set(orderedElements);
 
-        const visibleCards = cards
-          .filter((card) => {
-            if (!(card instanceof HTMLElement)) {
-              return false;
-            }
+        cards.forEach((card) => {
+          if (card.element) {
+            card.element.hidden = !visibleElements.has(card.element);
+          }
+        });
 
-            const matchesStatus =
-              statusValue === "all" || card.dataset.bookStatus === statusValue;
-            const tags = (() => {
-              try {
-                const parsed = JSON.parse(card.dataset.bookTags ?? "[]");
-                return Array.isArray(parsed) ? parsed.filter((tag) => typeof tag === "string") : [];
-              } catch {
-                return [];
-              }
-            })();
-            const matchesTag = tagValue === "all" || tags.includes(tagValue);
-            const isVisible = matchesStatus && matchesTag;
-
-            card.hidden = !isVisible;
-            return isVisible;
-          })
-          .sort((left, right) => {
-            if (!(left instanceof HTMLElement) || !(right instanceof HTMLElement)) {
-              return 0;
-            }
-
-            if (sortValue === "title") {
-              return (left.dataset.bookTitle ?? "").localeCompare(right.dataset.bookTitle ?? "", "zh-CN");
-            }
-
-            if (sortValue === "completion") {
-              return (
-                (completionRank[left.dataset.bookStatus ?? "paused"] ?? 9) -
-                  (completionRank[right.dataset.bookStatus ?? "paused"] ?? 9) ||
-                (left.dataset.bookTitle ?? "").localeCompare(right.dataset.bookTitle ?? "", "zh-CN")
-              );
-            }
-
-            return (right.dataset.bookUpdatedAt ?? "").localeCompare(left.dataset.bookUpdatedAt ?? "");
-          });
-
-        grid.append(...visibleCards);
+        grid.append(...orderedElements);
         count.textContent = `当前显示 ${visibleCards.length} 本书`;
       };
 

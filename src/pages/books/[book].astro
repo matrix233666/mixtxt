@@ -104,25 +104,19 @@ const continueReadingData = {
 ></script>
 
 <script>
-  import { readStoredReaderProgress, resolveProgressChapter } from "../../lib/reading";
+  import {
+    readEmbeddedJson,
+    resolveBookContinueReadingTarget,
+    sanitizeContinueReadingPayload
+  } from "../../lib/reader-client";
 
   const continueLink = document.querySelector("[data-book-continue-link]");
   const chapterItems = Array.from(document.querySelectorAll("[data-chapter-item]"));
   const continueReadingData = document.getElementById("book-continue-reading-data");
 
   if (continueLink instanceof HTMLAnchorElement && continueReadingData instanceof HTMLScriptElement) {
-    type ContinueReadingData = {
-      bookSlug: string;
-      chapters: Array<{
-        slug: string;
-        title: string;
-        url: string;
-      }>;
-    };
-
-    const bookData = JSON.parse(continueReadingData.textContent ?? "{}") as ContinueReadingData;
-    const progress = readStoredReaderProgress(window.localStorage, bookData.bookSlug);
-    const savedChapter = resolveProgressChapter(bookData.chapters, progress);
+    const bookData = sanitizeContinueReadingPayload(readEmbeddedJson(continueReadingData.textContent));
+    const savedChapter = resolveBookContinueReadingTarget(window.localStorage, bookData);
 
     if (savedChapter) {
       continueLink.hidden = false;

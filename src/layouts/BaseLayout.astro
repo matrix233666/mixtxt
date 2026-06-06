@@ -1,6 +1,6 @@
 ---
+import { buildReaderPreferenceBootstrapScript } from "../lib/reader-client";
 import { getSiteConfig } from "../lib/site";
-import { defaultReaderPreferences, readerPreferenceOptions, readerStorageKeys } from "../lib/reading";
 import "../styles/global.css";
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
 
 const site = getSiteConfig();
 const { title = site.title, description = site.description } = Astro.props;
+const readerPreferenceBootstrapScript = buildReaderPreferenceBootstrapScript();
 ---
 
 <!doctype html>
@@ -20,44 +21,7 @@ const { title = site.title, description = site.description } = Astro.props;
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
-    <script
-      is:inline
-      define:vars={{
-        defaults: defaultReaderPreferences,
-        options: readerPreferenceOptions,
-        storageKeys: readerStorageKeys
-      }}
-    >
-      /**
-       * Applies persisted reader preferences early to reduce visual theme shifts.
-       */
-      (() => {
-        const html = document.documentElement;
-        const readPreference = (storageKey, allowedValues, fallbackValue) => {
-          try {
-            const rawValue = window.localStorage.getItem(storageKey);
-            return typeof rawValue === "string" && allowedValues.includes(rawValue)
-              ? rawValue
-              : fallbackValue;
-          } catch {
-            return fallbackValue;
-          }
-        };
-
-        html.dataset.readerTheme = readPreference(storageKeys.theme, options.theme, defaults.theme);
-        html.dataset.readerFontSize = readPreference(
-          storageKeys.fontSize,
-          options.fontSize,
-          defaults.fontSize
-        );
-        html.dataset.readerLineHeight = readPreference(
-          storageKeys.lineHeight,
-          options.lineHeight,
-          defaults.lineHeight
-        );
-        html.dataset.readerWidth = readPreference(storageKeys.width, options.width, defaults.width);
-      })();
-    </script>
+    <script is:inline set:html={readerPreferenceBootstrapScript}></script>
   </head>
   <body>
     <slot />
