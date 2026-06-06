@@ -7,4 +7,33 @@
   --line: #d6dce8;
   --accent: #1d4ed8;
   --max-width: 72rem;
+  color-scheme: light;
+}
+
+:root[data-reader-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-reader-theme="dark"] {
+  --bg: #0b1220;
+  --surface: #111827;
+  --surface-alt: #172036;
+  --text: #f3f4f6;
+  --muted: #c0c7d4;
+  --line: #2d3a53;
+  --accent: #7db2ff;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-reader-theme="system"] {
+    --bg: #0b1220;
+    --surface: #111827;
+    --surface-alt: #172036;
+    --text: #f3f4f6;
+    --muted: #c0c7d4;
+    --line: #2d3a53;
+    --accent: #7db2ff;
+    color-scheme: dark;
+  }
 }

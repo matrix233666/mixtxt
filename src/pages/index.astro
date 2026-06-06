@@ -3,13 +3,26 @@ import AppFooter from "../components/AppFooter.astro";
 import AppHeader from "../components/AppHeader.astro";
 import BookCard from "../components/BookCard.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { getAllTags, getPublicBooks, getRecentChapters } from "../lib/content";
+import { getAllTags, getPublicBooks, getPublishedChapters, getRecentChapters } from "../lib/content";
 
-const [books, recentChapters, tags] = await Promise.all([
+const [books, recentChapters, tags, chapters] = await Promise.all([
   getPublicBooks(),
   getRecentChapters(5),
-  getAllTags()
+  getAllTags(),
+  getPublishedChapters()
 ]);
+
+const continueReadingBooks = books.map((book) => ({
+  slug: book.data.slug,
+  title: book.data.title,
+  chapters: chapters
+    .filter((chapter) => chapter.data.book === book.data.slug)
+    .map((chapter) => ({
+      slug: chapter.data.slug,
+      title: chapter.data.title,
+      url: `/books/${chapter.data.book}/${chapter.data.slug}/`
+    }))
+}));
 ---
 
 <BaseLayout>
@@ -21,17 +34,32 @@ const [books, recentChapters, tags] = await Promise.all([
       <p>用 AI 改编经典小说的个人创作站。</p>
       <ul class="tag-row" aria-label="发现入口">
         <li>
+          <a href="/books/">书籍</a>
+        </li>
+        <li>
           <a href="/search/">搜索</a>
         </li>
         <li>
           <a href="/releases/">发布记录</a>
         </li>
+        <li>
+          <a href="/about/">关于</a>
+        </li>
       </ul>
+    </section>
+
+    <section class="section-block" data-continue-reading-home hidden>
+      <div class="section-header">
+        <h2>继续阅读</h2>
+        <a href="/books/">查看全部书籍</a>
+      </div>
+      <ul class="recent-list" data-continue-reading-list></ul>
     </section>
 
     <section class="section-block">
       <div class="section-header">
         <h2>书籍</h2>
+        <a href="/books/">全部书籍</a>
       </div>
       <div class="book-grid">
         {books.map((book) => (
@@ -73,3 +101,63 @@ const [books, recentChapters, tags] = await Promise.all([
   </main>
   <AppFooter />
 </BaseLayout>
+
+<script
+  id="home-continue-reading-data"
+  type="application/json"
+  is:inline
+  set:html={JSON.stringify(continueReadingBooks)}
+></script>
+
+<script>
+  import { readStoredReaderProgress, resolveProgressChapter } from "../lib/reading";
+
+  const continueReadingRoot = document.querySelector("[data-continue-reading-home]");
+  const continueReadingList = continueReadingRoot?.querySelector("[data-continue-reading-list]");
+  const continueReadingData = document.getElementById("home-continue-reading-data");
+
+  if (
+    continueReadingRoot instanceof HTMLElement &&
+    continueReadingList instanceof HTMLUListElement &&
+    continueReadingData instanceof HTMLScriptElement
+  ) {
+    type ContinueReadingBook = {
+      slug: string;
+      title: string;
+      chapters: Array<{
+        slug: string;
+        title: string;
+        url: string;
+      }>;
+    };
+
+    const books = JSON.parse(continueReadingData.textContent ?? "[]") as ContinueReadingBook[];
+    const items = books
+      .map((book) => {
+        const progress = readStoredReaderProgress(window.localStorage, book.slug);
+        const chapter = resolveProgressChapter(book.chapters, progress);
+        return chapter ? { ...chapter, bookTitle: book.title } : null;
+      })
+      .filter((item) => item !== null);
+
+    if (items.length > 0) {
+      const nodes = items.map((item) => {
+        const listItem = document.createElement("li");
+        const link = document.createElement("a");
+        const title = document.createElement("strong");
+        const meta = document.createElement("span");
+
+        title.textContent = item.bookTitle;
+        meta.textContent = `继续阅读：${item.title}`;
+        link.href = item.url;
+        link.append(title, meta);
+        listItem.append(link);
+
+        return listItem;
+      });
+
+      continueReadingList.replaceChildren(...nodes);
+      continueReadingRoot.hidden = false;
+    }
+  }
+</script>

@@ -1,7 +1,14 @@
 ---
+import BookMeta from "../../components/BookMeta.astro";
 import ChapterList from "../../components/ChapterList.astro";
 import BookLayout from "../../layouts/BookLayout.astro";
-import { getBookBySlug, getPublicBooks, getPublishedChapters } from "../../lib/content";
+import {
+  getBookBySlug,
+  getBookStartChapter,
+  getPublicBooks,
+  getPublicReleasesByBook,
+  getPublishedChapters
+} from "../../lib/content";
 
 export async function getStaticPaths() {
   const books = await getPublicBooks();
@@ -15,25 +22,121 @@ export async function getStaticPaths() {
 
 const { book: bookSlug } = Astro.params;
 const book = await getBookBySlug(bookSlug!);
-const chapters = await getPublishedChapters(bookSlug);
+const [chapters, startChapter, releases] = await Promise.all([
+  getPublishedChapters(bookSlug),
+  getBookStartChapter(bookSlug!),
+  getPublicReleasesByBook(bookSlug!)
+]);
+const continueReadingData = {
+  bookSlug: bookSlug!,
+  chapters: chapters.map((chapter) => ({
+    slug: chapter.data.slug,
+    title: chapter.data.title,
+    url: `/books/${chapter.data.book}/${chapter.data.slug}/`
+  }))
+};
 ---
 
 <BookLayout title={book!.data.title} summary={book!.data.summary}>
   <article class="book-page card-surface">
-    <p class="eyebrow">{book!.data.status}</p>
-    <h1>{book!.data.title}</h1>
-    <p class="book-summary">{book!.data.summary}</p>
-    {(book!.data.tags ?? []).length > 0 && (
-      <ul class="tag-row" aria-label="标签">
-        {(book!.data.tags ?? []).map((tag) => (
-          <li>{tag}</li>
-        ))}
-      </ul>
+    <div class="book-page__hero">
+      {book!.data.cover && (
+        <img class="book-cover" src={book!.data.cover} alt={`${book!.data.title} 封面`} loading="lazy" />
+      )}
+
+      <div class="book-page__intro">
+        <p class="eyebrow">书籍详情</p>
+        <h1>{book!.data.title}</h1>
+        <p class="book-summary">{book!.data.summary}</p>
+        <BookMeta book={book!} />
+
+        <div class="book-actions">
+          {startChapter && (
+            <a class="button-link button-link--primary" href={`/books/${bookSlug}/${startChapter.data.slug}/`}>
+              开始阅读
+            </a>
+          )}
+          <a
+            class="button-link"
+            href={startChapter ? `/books/${bookSlug}/${startChapter.data.slug}/` : "#"}
+            data-book-continue-link
+            hidden
+          >
+            继续阅读
+          </a>
+        </div>
+      </div>
+    </div>
+
+    {releases.length > 0 && (
+      <section class="book-page__releases">
+        <div class="section-header">
+          <h2>最近发布</h2>
+          <a href="/releases/">查看全部</a>
+        </div>
+        <ul class="release-list" aria-label="本书最近发布">
+          {releases.map((release) => (
+            <li>
+              <strong>{release.data.title}</strong>
+              <span>{release.data.version}</span>
+              <time datetime={release.data.date}>{release.data.date}</time>
+            </li>
+          ))}
+        </ul>
+      </section>
     )}
 
     <section class="book-page__chapters">
-      <h2>章节目录</h2>
+      <div class="section-header">
+        <h2>章节目录</h2>
+        <span>{chapters.length} 章</span>
+      </div>
       <ChapterList chapters={chapters} />
     </section>
   </article>
 </BookLayout>
+
+<script
+  id="book-continue-reading-data"
+  type="application/json"
+  is:inline
+  set:html={JSON.stringify(continueReadingData)}
+></script>
+
+<script>
+  import { readStoredReaderProgress, resolveProgressChapter } from "../../lib/reading";
+
+  const continueLink = document.querySelector("[data-book-continue-link]");
+  const chapterItems = Array.from(document.querySelectorAll("[data-chapter-item]"));
+  const continueReadingData = document.getElementById("book-continue-reading-data");
+
+  if (continueLink instanceof HTMLAnchorElement && continueReadingData instanceof HTMLScriptElement) {
+    type ContinueReadingData = {
+      bookSlug: string;
+      chapters: Array<{
+        slug: string;
+        title: string;
+        url: string;
+      }>;
+    };
+
+    const bookData = JSON.parse(continueReadingData.textContent ?? "{}") as ContinueReadingData;
+    const progress = readStoredReaderProgress(window.localStorage, bookData.bookSlug);
+    const savedChapter = resolveProgressChapter(bookData.chapters, progress);
+
+    if (savedChapter) {
+      continueLink.hidden = false;
+      continueLink.href = savedChapter.url;
+      continueLink.textContent = `继续阅读：${savedChapter.title}`;
+
+      chapterItems.forEach((item) => {
+        if (!(item instanceof HTMLElement)) {
+          return;
+        }
+
+        const isCurrent = item.dataset.chapterSlug === savedChapter.slug;
+        item.dataset.continueReading = isCurrent ? "true" : "false";
+      });
+    }
+  }
+</script>

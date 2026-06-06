@@ -186,13 +186,15 @@ describe("discovery content helpers", () => {
 
     expect(entries).toEqual([
       "/",
+      "/books/",
       "/books/public-book/",
       "/books/public-book/start/",
       "/books/public-book/signal/",
+      "/about/",
       "/releases/",
       "/search/",
-      "/tags/AI%E6%94%B9%E7%BC%96/",
-      "/tags/%E7%A7%91%E5%B9%BB/"
+      "/tags/%E7%A7%91%E5%B9%BB/",
+      "/tags/AI%E6%94%B9%E7%BC%96/"
     ]);
     expect(entries.some((entry) => entry.includes("hidden-book"))).toBe(false);
   });

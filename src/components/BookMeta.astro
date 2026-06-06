@@ -1,0 +1,89 @@
+---
+type BookStatus = "planning" | "serializing" | "completed" | "paused";
+type CopyrightStatus = "public-domain" | "authorized" | "private-draft" | "unknown";
+
+interface Props {
+  book: {
+    data: {
+      original?: string;
+      author?: string;
+      adaptor?: string;
+      status: BookStatus;
+      updatedAt: string;
+      startedAt?: string;
+      copyrightStatus: CopyrightStatus;
+      tags?: readonly string[];
+    };
+  };
+  variant?: "grid" | "detail";
+}
+
+const statusLabels: Record<BookStatus, string> = {
+  planning: "规划中",
+  serializing: "连载中",
+  completed: "已完结",
+  paused: "暂停中"
+};
+
+const copyrightLabels: Record<CopyrightStatus, string> = {
+  "public-domain": "公版改编",
+  authorized: "已获授权",
+  "private-draft": "私有草稿",
+  unknown: "版权待确认"
+};
+
+const { book, variant = "detail" } = Astro.props;
+const showDenseMeta = variant === "grid";
+---
+
+<div class:list={["book-meta", showDenseMeta && "book-meta--grid"]}>
+  <div class="book-meta__badges">
+    <span class="status-badge">{statusLabels[book.data.status]}</span>
+    <span class="meta-chip">{copyrightLabels[book.data.copyrightStatus]}</span>
+  </div>
+
+  <dl class="book-meta__list">
+    {book.data.original && (
+      <div>
+        <dt>原作</dt>
+        <dd>{book.data.original}</dd>
+      </div>
+    )}
+    {book.data.author && (
+      <div>
+        <dt>作者</dt>
+        <dd>{book.data.author}</dd>
+      </div>
+    )}
+    {book.data.adaptor && (
+      <div>
+        <dt>改编</dt>
+        <dd>{book.data.adaptor}</dd>
+      </div>
+    )}
+    {book.data.startedAt && (
+      <div>
+        <dt>开始</dt>
+        <dd>
+          <time datetime={book.data.startedAt}>{book.data.startedAt}</time>
+        </dd>
+      </div>
+    )}
+    <div>
+      <dt>更新</dt>
+      <dd>
+        <time datetime={book.data.updatedAt}>{book.data.updatedAt}</time>
+      </dd>
+    </div>
+  </dl>
+
+  {(book.data.tags ?? []).length > 0 && (
+    <ul class="tag-row" aria-label="标签">
+      {(book.data.tags ?? []).map((tag) => (
+        <li>
+          <a href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>
+        </li>
+      ))}
+    </ul>
+  )}
+</div>

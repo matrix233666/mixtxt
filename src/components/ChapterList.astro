@@ -6,23 +6,34 @@ interface Chapter {
     title: string;
     slug: string;
     summary?: string;
+    updatedAt?: string;
   };
 }
 
 interface Props {
   chapters: Chapter[];
+  activeChapterSlug?: string | null;
 }
 
-const { chapters } = Astro.props;
+const { chapters, activeChapterSlug = null } = Astro.props;
 ---
 
 <ol class="chapter-list">
   {chapters.map((chapter) => (
-    <li>
+    <li
+      data-chapter-item
+      data-chapter-slug={chapter.data.slug}
+      class:list={[activeChapterSlug === chapter.data.slug && "is-active"]}
+    >
       <a href={`/books/${chapter.data.book}/${chapter.data.slug}/`}>
         <span class="chapter-list__number">{chapter.data.chapterNo}</span>
-        <div>
-          <strong>{chapter.data.title}</strong>
+        <div class="chapter-list__body">
+          <div class="chapter-list__heading">
+            <strong>{chapter.data.title}</strong>
+            {chapter.data.updatedAt && (
+              <time datetime={chapter.data.updatedAt}>{chapter.data.updatedAt}</time>
+            )}
+          </div>
           {chapter.data.summary && <p>{chapter.data.summary}</p>}
         </div>
       </a>

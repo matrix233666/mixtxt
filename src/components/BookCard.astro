@@ -1,10 +1,19 @@
 ---
+import BookMeta from "./BookMeta.astro";
+
 interface Props {
   book: {
     data: {
       slug: string;
       title: string;
       summary: string;
+      status: "planning" | "serializing" | "completed" | "paused";
+      updatedAt: string;
+      original?: string;
+      author?: string;
+      adaptor?: string;
+      startedAt?: string;
+      copyrightStatus: "public-domain" | "authorized" | "private-draft" | "unknown";
       tags?: readonly string[];
     };
   };
@@ -13,16 +22,21 @@ interface Props {
 const { book } = Astro.props;
 ---
 
-<article class="book-card">
+<article
+  class="book-card"
+  data-book-card
+  data-book-slug={book.data.slug}
+  data-book-status={book.data.status}
+  data-book-updated-at={book.data.updatedAt}
+  data-book-title={book.data.title.toLowerCase()}
+  data-book-tags={(book.data.tags ?? []).join("|")}
+>
   <a class="book-card__link" href={`/books/${book.data.slug}/`}>
-    <h2>{book.data.title}</h2>
+    <div class="book-card__header">
+      <h2>{book.data.title}</h2>
+      <time datetime={book.data.updatedAt}>{book.data.updatedAt}</time>
+    </div>
     <p>{book.data.summary}</p>
-    {(book.data.tags ?? []).length > 0 && (
-      <ul class="tag-row" aria-label="标签">
-        {(book.data.tags ?? []).map((tag) => (
-          <li>{tag}</li>
-        ))}
-      </ul>
-    )}
+    <BookMeta book={book} variant="grid" />
   </a>
 </article>

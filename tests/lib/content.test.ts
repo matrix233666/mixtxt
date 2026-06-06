@@ -14,9 +14,15 @@ let filterPublishedChapters: typeof import("../../src/lib/content").filterPublis
 let findPublicBookBySlug: typeof import("../../src/lib/content").findPublicBookBySlug;
 let getAllTags: typeof import("../../src/lib/content").getAllTags;
 let getBookBySlug: typeof import("../../src/lib/content").getBookBySlug;
+let getBookStartChapter: typeof import("../../src/lib/content").getBookStartChapter;
 let getChapterNav: typeof import("../../src/lib/content").getChapterNav;
+let getPublicBooksByTag: typeof import("../../src/lib/content").getPublicBooksByTag;
 let getPublicBooks: typeof import("../../src/lib/content").getPublicBooks;
+let getPublicChapterBySlug: typeof import("../../src/lib/content").getPublicChapterBySlug;
+let getPublicReleasesByBook: typeof import("../../src/lib/content").getPublicReleasesByBook;
+let getPublicSitemapEntries: typeof import("../../src/lib/content").getPublicSitemapEntries;
 let getPublishedChapters: typeof import("../../src/lib/content").getPublishedChapters;
+let getPublicReleases: typeof import("../../src/lib/content").getPublicReleases;
 let getRecentChapters: typeof import("../../src/lib/content").getRecentChapters;
 
 const books = [
@@ -83,6 +89,29 @@ const chapters = [
   }
 ] as const;
 
+const releases = [
+  {
+    id: "releases/public-v0-1-0.md",
+    data: {
+      book: "public-book",
+      version: "v0.1.0",
+      versionSlug: "v0-1-0",
+      title: "首发",
+      date: "2026-06-05"
+    }
+  },
+  {
+    id: "releases/hidden-v0-1-0.md",
+    data: {
+      book: "hidden-book",
+      version: "v0.1.0",
+      versionSlug: "v0-1-0",
+      title: "隐藏首发",
+      date: "2026-06-06"
+    }
+  }
+] as const;
+
 beforeAll(async () => {
   ({
     buildChapterNav,
@@ -91,8 +120,14 @@ beforeAll(async () => {
     findPublicBookBySlug,
     getAllTags,
     getBookBySlug,
+    getBookStartChapter,
     getChapterNav,
+    getPublicBooksByTag,
     getPublicBooks,
+    getPublicChapterBySlug,
+    getPublicReleases,
+    getPublicReleasesByBook,
+    getPublicSitemapEntries,
     getPublishedChapters,
     getRecentChapters
   } = await import("../../src/lib/content"));
@@ -193,6 +228,18 @@ describe("content query helpers", () => {
     ).toEqual(["one", "two"]);
   });
 
+  it("gets the start chapter and a public chapter by slug", async () => {
+    getCollectionMock.mockImplementation(async (collection: string) => {
+      if (collection === "books") return books;
+      if (collection === "chapters") return chapters;
+      return [];
+    });
+
+    expect((await getBookStartChapter("public-book"))?.data.slug).toBe("one");
+    expect((await getPublicChapterBySlug("public-book", "two"))?.data.slug).toBe("two");
+    expect(await getPublicChapterBySlug("public-book", "draft")).toBeNull();
+  });
+
   it("gets recent chapters in updatedAt order and clamps negative limits", async () => {
     const manyChapters = [
       ...chapters,
@@ -260,5 +307,34 @@ describe("content query helpers", () => {
     getCollectionMock.mockResolvedValueOnce(taggedBooks);
 
     expect(await getAllTags()).toEqual(["A", "B"]);
+  });
+
+  it("gets public books by tag", async () => {
+    getCollectionMock.mockResolvedValueOnce(books);
+    expect((await getPublicBooksByTag("A")).map((book) => book.data.slug)).toEqual(["public-book"]);
+  });
+
+  it("filters releases down to public books and per-book subsets", async () => {
+    getCollectionMock.mockImplementation(async (collection: string) => {
+      if (collection === "books") return books;
+      if (collection === "releases") return releases;
+      return [];
+    });
+
+    expect((await getPublicReleases()).map((release) => release.data.book)).toEqual(["public-book"]);
+    expect((await getPublicReleasesByBook("public-book")).map((release) => release.data.title)).toEqual([
+      "首发"
+    ]);
+  });
+
+  it("includes the books and about routes in the public sitemap", async () => {
+    getCollectionMock.mockImplementation(async (collection: string) => {
+      if (collection === "books") return books;
+      if (collection === "chapters") return chapters;
+      return [];
+    });
+
+    expect(await getPublicSitemapEntries()).toContain("/books/");
+    expect(await getPublicSitemapEntries()).toContain("/about/");
   });
 });

@@ -1,0 +1,47 @@
+---
+import AppFooter from "../components/AppFooter.astro";
+import AppHeader from "../components/AppHeader.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getSiteConfig } from "../lib/site";
+
+const site = getSiteConfig();
+---
+
+<BaseLayout title="关于 | MixTXT" description="关于 MixTXT 的项目说明与版权边界">
+  <AppHeader />
+  <main class="page-shell page-stack">
+    <article class="about-page card-surface">
+      <p class="eyebrow">About</p>
+      <h1>关于 MixTXT</h1>
+      <p>
+        MixTXT 是一个以静态站点形式发布的个人改编小说项目，重点放在长期可读的章节阅读体验，而不是账号体系或运行时个性化。
+      </p>
+
+      <section>
+        <h2>AI 如何参与</h2>
+        <p>
+          AI 参与大纲整理、改写草案、风格实验和局部润色，但所有公开章节都会经过人工筛选、修改与最终确认。
+        </p>
+      </section>
+
+      <section>
+        <h2>版权边界</h2>
+        <p>{site.copyright}</p>
+        <p>
+          项目只公开处于公版范围内的原作改编内容，或已经获得授权的文本；不在公开范围内的内容不会出现在站点可访问路由中。
+        </p>
+      </section>
+
+      <section>
+        <h2>联系与仓库</h2>
+        <p>如需反馈问题、讨论改编方式或查看实现细节，可直接访问项目仓库。</p>
+        <p>
+          <a href={site.github} rel="noreferrer" target="_blank">
+            {site.github}
+          </a>
+        </p>
+      </section>
+    </article>
+  </main>
+  <AppFooter />
+</BaseLayout>

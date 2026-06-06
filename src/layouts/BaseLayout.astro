@@ -1,5 +1,6 @@
 ---
 import { getSiteConfig } from "../lib/site";
+import { defaultReaderPreferences, readerStorageKeys } from "../lib/reading";
 import "../styles/global.css";
 
 interface Props {
@@ -19,6 +20,32 @@ const { title = site.title, description = site.description } = Astro.props;
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
+    <script
+      is:inline
+      define:vars={{
+        defaults: defaultReaderPreferences,
+        storageKeys: readerStorageKeys
+      }}
+    >
+      /**
+       * Applies persisted reader preferences early to reduce visual theme shifts.
+       */
+      (() => {
+        const html = document.documentElement;
+        const readPreference = (storageKey, fallbackValue) => {
+          try {
+            return window.localStorage.getItem(storageKey) ?? fallbackValue;
+          } catch {
+            return fallbackValue;
+          }
+        };
+
+        html.dataset.readerTheme = readPreference(storageKeys.theme, defaults.theme);
+        html.dataset.readerFontSize = readPreference(storageKeys.fontSize, defaults.fontSize);
+        html.dataset.readerLineHeight = readPreference(storageKeys.lineHeight, defaults.lineHeight);
+        html.dataset.readerWidth = readPreference(storageKeys.width, defaults.width);
+      })();
+    </script>
   </head>
   <body>
     <slot />

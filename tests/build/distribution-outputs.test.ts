@@ -33,6 +33,8 @@ describe("distribution outputs build", () => {
     const urls = getXmlTagContents(sitemapXml, "loc").sort();
     const expectedUrls = [
       "https://mixtxt.example.com/",
+      "https://mixtxt.example.com/about/",
+      "https://mixtxt.example.com/books/",
       "https://mixtxt.example.com/books/sanguo-scifi/",
       "https://mixtxt.example.com/books/sanguo-scifi/huangjin/",
       "https://mixtxt.example.com/books/sanguo-scifi/prologue/",

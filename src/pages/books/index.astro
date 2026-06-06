@@ -1,0 +1,146 @@
+---
+import AppFooter from "../../components/AppFooter.astro";
+import AppHeader from "../../components/AppHeader.astro";
+import BookCard from "../../components/BookCard.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getAllTags, getPublicBooks } from "../../lib/content";
+
+const [books, tags] = await Promise.all([getPublicBooks(), getAllTags()]);
+---
+
+<BaseLayout title="书籍 | MixTXT" description="MixTXT 公开书籍目录">
+  <AppHeader />
+  <main class="page-shell page-stack">
+    <section class="hero-block">
+      <p class="eyebrow">Books</p>
+      <h1>书籍</h1>
+      <p>汇总全部公开作品，并提供轻量排序与筛选。</p>
+    </section>
+
+    <section class="section-block">
+      <form class="books-filters" data-books-filters>
+        <label>
+          <span>状态</span>
+          <select name="status" data-books-status>
+            <option value="all">全部</option>
+            <option value="serializing">连载中</option>
+            <option value="completed">已完结</option>
+            <option value="planning">规划中</option>
+            <option value="paused">暂停中</option>
+          </select>
+        </label>
+
+        <label>
+          <span>标签</span>
+          <select name="tag" data-books-tag>
+            <option value="all">全部</option>
+            {tags.map((tag) => (
+              <option value={tag}>{tag}</option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          <span>排序</span>
+          <select name="sort" data-books-sort>
+            <option value="recent">最近更新</option>
+            <option value="title">标题</option>
+            <option value="completion">完成状态</option>
+          </select>
+        </label>
+      </form>
+
+      <p class="books-index__count" data-books-count>共 {books.length} 本公开书籍</p>
+
+      <div class="book-grid" data-books-grid>
+        {books.map((book) => (
+          <BookCard book={book} />
+        ))}
+      </div>
+    </section>
+  </main>
+  <AppFooter />
+</BaseLayout>
+
+<script is:inline>
+  const filtersRoot = document.querySelector("[data-books-filters]");
+  const grid = document.querySelector("[data-books-grid]");
+  const count = document.querySelector("[data-books-count]");
+
+  if (
+    filtersRoot instanceof HTMLFormElement &&
+    grid instanceof HTMLElement &&
+    count instanceof HTMLParagraphElement
+  ) {
+    const statusSelect = filtersRoot.querySelector("[data-books-status]");
+    const tagSelect = filtersRoot.querySelector("[data-books-tag]");
+    const sortSelect = filtersRoot.querySelector("[data-books-sort]");
+
+    if (
+      statusSelect instanceof HTMLSelectElement &&
+      tagSelect instanceof HTMLSelectElement &&
+      sortSelect instanceof HTMLSelectElement
+    ) {
+      const cards = Array.from(grid.querySelectorAll("[data-book-card]"));
+      const completionRank = {
+        completed: 0,
+        serializing: 1,
+        planning: 2,
+        paused: 3
+      };
+
+      /**
+       * Applies the active filters and sort mode to the static books grid.
+       */
+      const renderGrid = () => {
+        const statusValue = statusSelect.value;
+        const tagValue = tagSelect.value;
+        const sortValue = sortSelect.value;
+
+        const visibleCards = cards
+          .filter((card) => {
+            if (!(card instanceof HTMLElement)) {
+              return false;
+            }
+
+            const matchesStatus =
+              statusValue === "all" || card.dataset.bookStatus === statusValue;
+            const tags = (card.dataset.bookTags ?? "").split("|").filter(Boolean);
+            const matchesTag = tagValue === "all" || tags.includes(tagValue);
+            const isVisible = matchesStatus && matchesTag;
+
+            card.hidden = !isVisible;
+            return isVisible;
+          })
+          .sort((left, right) => {
+            if (!(left instanceof HTMLElement) || !(right instanceof HTMLElement)) {
+              return 0;
+            }
+
+            if (sortValue === "title") {
+              return (left.dataset.bookTitle ?? "").localeCompare(right.dataset.bookTitle ?? "", "zh-CN");
+            }
+
+            if (sortValue === "completion") {
+              return (
+                (completionRank[left.dataset.bookStatus ?? "paused"] ?? 9) -
+                  (completionRank[right.dataset.bookStatus ?? "paused"] ?? 9) ||
+                (left.dataset.bookTitle ?? "").localeCompare(right.dataset.bookTitle ?? "", "zh-CN")
+              );
+            }
+
+            return (right.dataset.bookUpdatedAt ?? "").localeCompare(left.dataset.bookUpdatedAt ?? "");
+          });
+
+        grid.append(...visibleCards);
+        count.textContent = `当前显示 ${visibleCards.length} 本书`;
+      };
+
+      [statusSelect, tagSelect, sortSelect].forEach((control) => {
+        control.addEventListener("change", renderGrid);
+      });
+
+      renderGrid();
+    }
+  }
+</script>

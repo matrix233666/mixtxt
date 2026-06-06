@@ -1,0 +1,189 @@
+---
+import { defaultReaderPreferences, readerPreferenceOptions } from "../lib/reading";
+
+interface Props {
+  bookSlug: string;
+  chapterSlug: string;
+  chapterTitle: string;
+  directoryId: string;
+}
+
+const { bookSlug, chapterSlug, chapterTitle, directoryId } = Astro.props;
+---
+
+<section
+  class="reader-toolbar card-surface"
+  data-reader-toolbar
+  data-directory-id={directoryId}
+  data-book-slug={bookSlug}
+  data-chapter-slug={chapterSlug}
+>
+  <div class="reader-toolbar__primary">
+    <button
+      class="reader-toolbar__button"
+      type="button"
+      data-reader-directory-toggle
+      aria-controls={directoryId}
+      aria-expanded="false"
+    >
+      目录
+    </button>
+    <p class="reader-toolbar__chapter" title={chapterTitle}>{chapterTitle}</p>
+  </div>
+
+  <div class="reader-toolbar__controls">
+    <label>
+      <span>主题</span>
+      <select data-reader-control="theme" aria-label="阅读主题">
+        {readerPreferenceOptions.theme.map((option) => (
+          <option value={option} selected={option === defaultReaderPreferences.theme}>
+            {option === "system" ? "跟随系统" : option === "light" ? "浅色" : "深色"}
+          </option>
+        ))}
+      </select>
+    </label>
+
+    <label>
+      <span>字号</span>
+      <select data-reader-control="fontSize" aria-label="字号">
+        {readerPreferenceOptions.fontSize.map((option) => (
+          <option value={option} selected={option === defaultReaderPreferences.fontSize}>
+            {option === "small" ? "小" : option === "medium" ? "中" : "大"}
+          </option>
+        ))}
+      </select>
+    </label>
+
+    <label>
+      <span>行高</span>
+      <select data-reader-control="lineHeight" aria-label="行高">
+        {readerPreferenceOptions.lineHeight.map((option) => (
+          <option value={option} selected={option === defaultReaderPreferences.lineHeight}>
+            {option === "compact" ? "紧凑" : option === "standard" ? "标准" : "舒展"}
+          </option>
+        ))}
+      </select>
+    </label>
+
+    <label>
+      <span>宽度</span>
+      <select data-reader-control="width" aria-label="版心宽度">
+        {readerPreferenceOptions.width.map((option) => (
+          <option value={option} selected={option === defaultReaderPreferences.width}>
+            {option === "standard" ? "标准" : "加宽"}
+          </option>
+        ))}
+      </select>
+    </label>
+  </div>
+</section>
+
+<script>
+  import {
+    readStoredReaderPreferences,
+    readerPreferenceKeys,
+    type ReaderPreferenceKey,
+    type ReaderPreferences,
+    writeStoredReaderPreference,
+    writeStoredReaderProgress
+  } from "../lib/reading";
+
+  const readerRoot = document.querySelector("[data-reader-root]");
+  const toolbar = readerRoot?.querySelector("[data-reader-toolbar]");
+  const directory = document.getElementById(toolbar?.getAttribute("data-directory-id") ?? "");
+  const directoryToggle = toolbar?.querySelector("[data-reader-directory-toggle]");
+  const controls = Array.from(toolbar?.querySelectorAll("[data-reader-control]") ?? []);
+
+  if (
+    readerRoot instanceof HTMLElement &&
+    toolbar instanceof HTMLElement &&
+    directory instanceof HTMLDetailsElement &&
+    directoryToggle instanceof HTMLButtonElement &&
+    controls.every((control) => control instanceof HTMLSelectElement)
+  ) {
+    /**
+     * Applies the current reader preferences to both the page and the document root.
+     */
+    const applyPreferences = (preferences: ReaderPreferences) => {
+      document.documentElement.dataset.readerTheme = preferences.theme;
+      document.documentElement.dataset.readerFontSize = preferences.fontSize;
+      document.documentElement.dataset.readerLineHeight = preferences.lineHeight;
+      document.documentElement.dataset.readerWidth = preferences.width;
+
+      readerRoot.dataset.readerTheme = preferences.theme;
+      readerRoot.dataset.readerFontSize = preferences.fontSize;
+      readerRoot.dataset.readerLineHeight = preferences.lineHeight;
+      readerRoot.dataset.readerWidth = preferences.width;
+    };
+
+    /**
+     * Keeps the toggle button state aligned with the current drawer visibility.
+     */
+    const syncDirectoryState = () => {
+      readerRoot.dataset.directoryOpen = directory.open ? "true" : "false";
+      directoryToggle.setAttribute("aria-expanded", directory.open ? "true" : "false");
+    };
+
+    /**
+     * Narrows a data attribute into one of the known reader preference keys.
+     */
+    const isPreferenceKey = (value: string | undefined): value is ReaderPreferenceKey => {
+      return typeof value === "string" && (readerPreferenceKeys as readonly string[]).includes(value);
+    };
+
+    const preferences = readStoredReaderPreferences(window.localStorage);
+
+    controls.forEach((control) => {
+      if (!(control instanceof HTMLSelectElement)) {
+        return;
+      }
+
+      if (!isPreferenceKey(control.dataset.readerControl)) {
+        return;
+      }
+
+      const controlKey = control.dataset.readerControl;
+      control.value = preferences[controlKey];
+    });
+
+    readerRoot.dataset.readerEnhanced = "true";
+    applyPreferences(preferences);
+
+    if (toolbar.dataset.bookSlug && toolbar.dataset.chapterSlug) {
+      writeStoredReaderProgress(window.localStorage, {
+        bookSlug: toolbar.dataset.bookSlug,
+        chapterSlug: toolbar.dataset.chapterSlug
+      });
+    }
+
+    directory.open = false;
+    syncDirectoryState();
+
+    controls.forEach((control) => {
+      if (!(control instanceof HTMLSelectElement)) {
+        return;
+      }
+
+      control.addEventListener("change", () => {
+        if (!isPreferenceKey(control.dataset.readerControl)) {
+          return;
+        }
+
+        const controlKey = control.dataset.readerControl;
+        const nextPreferences = writeStoredReaderPreference(
+          window.localStorage,
+          controlKey,
+          control.value
+        );
+
+        applyPreferences(nextPreferences);
+      });
+    });
+
+    directory.addEventListener("toggle", syncDirectoryState);
+    directoryToggle.addEventListener("click", () => {
+      directory.open = !directory.open;
+      syncDirectoryState();
+    });
+  }
+</script>
