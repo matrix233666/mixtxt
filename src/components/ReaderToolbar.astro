@@ -125,6 +125,15 @@ const { bookSlug, chapterSlug, chapterTitle, directoryId } = Astro.props;
     };
 
     /**
+     * Keeps the directory behavior aligned with the active viewport.
+     */
+    const desktopMediaQuery = window.matchMedia("(min-width: 960px)");
+    const syncDirectoryForViewport = () => {
+      directory.open = desktopMediaQuery.matches;
+      syncDirectoryState();
+    };
+
+    /**
      * Narrows a data attribute into one of the known reader preference keys.
      */
     const isPreferenceKey = (value: string | undefined): value is ReaderPreferenceKey => {
@@ -156,8 +165,7 @@ const { bookSlug, chapterSlug, chapterTitle, directoryId } = Astro.props;
       });
     }
 
-    directory.open = false;
-    syncDirectoryState();
+    syncDirectoryForViewport();
 
     controls.forEach((control) => {
       if (!(control instanceof HTMLSelectElement)) {
@@ -180,8 +188,13 @@ const { bookSlug, chapterSlug, chapterTitle, directoryId } = Astro.props;
       });
     });
 
+    desktopMediaQuery.addEventListener("change", syncDirectoryForViewport);
     directory.addEventListener("toggle", syncDirectoryState);
     directoryToggle.addEventListener("click", () => {
+      if (desktopMediaQuery.matches) {
+        return;
+      }
+
       directory.open = !directory.open;
       syncDirectoryState();
     });

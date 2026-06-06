@@ -1,6 +1,6 @@
 ---
 import { getSiteConfig } from "../lib/site";
-import { defaultReaderPreferences, readerStorageKeys } from "../lib/reading";
+import { defaultReaderPreferences, readerPreferenceOptions, readerStorageKeys } from "../lib/reading";
 import "../styles/global.css";
 
 interface Props {
@@ -24,6 +24,7 @@ const { title = site.title, description = site.description } = Astro.props;
       is:inline
       define:vars={{
         defaults: defaultReaderPreferences,
+        options: readerPreferenceOptions,
         storageKeys: readerStorageKeys
       }}
     >
@@ -32,18 +33,29 @@ const { title = site.title, description = site.description } = Astro.props;
        */
       (() => {
         const html = document.documentElement;
-        const readPreference = (storageKey, fallbackValue) => {
+        const readPreference = (storageKey, allowedValues, fallbackValue) => {
           try {
-            return window.localStorage.getItem(storageKey) ?? fallbackValue;
+            const rawValue = window.localStorage.getItem(storageKey);
+            return typeof rawValue === "string" && allowedValues.includes(rawValue)
+              ? rawValue
+              : fallbackValue;
           } catch {
             return fallbackValue;
           }
         };
 
-        html.dataset.readerTheme = readPreference(storageKeys.theme, defaults.theme);
-        html.dataset.readerFontSize = readPreference(storageKeys.fontSize, defaults.fontSize);
-        html.dataset.readerLineHeight = readPreference(storageKeys.lineHeight, defaults.lineHeight);
-        html.dataset.readerWidth = readPreference(storageKeys.width, defaults.width);
+        html.dataset.readerTheme = readPreference(storageKeys.theme, options.theme, defaults.theme);
+        html.dataset.readerFontSize = readPreference(
+          storageKeys.fontSize,
+          options.fontSize,
+          defaults.fontSize
+        );
+        html.dataset.readerLineHeight = readPreference(
+          storageKeys.lineHeight,
+          options.lineHeight,
+          defaults.lineHeight
+        );
+        html.dataset.readerWidth = readPreference(storageKeys.width, options.width, defaults.width);
       })();
     </script>
   </head>

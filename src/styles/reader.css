@@ -170,6 +170,10 @@
     align-items: start;
   }
 
+  .reader-toolbar__button {
+    display: none;
+  }
+
   .reader-header,
   .reader-toolbar,
   .reader-content,
